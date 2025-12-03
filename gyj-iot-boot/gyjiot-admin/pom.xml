@@ -10,6 +10,10 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>jar</packaging>
     <artifactId>gyjiot-admin</artifactId>
+    <properties>
+        <swagger.version>3.0.0</swagger.version>
+        <io.swagger.version>1.6.2</io.swagger.version>
+    </properties>
 
     <description>
         web服务入口
@@ -25,9 +29,11 @@
         </dependency>
 
         <!-- swagger3-->
+        <!-- 新增：补充Swagger3核心依赖，解决类缺失 -->
         <dependency>
             <groupId>io.springfox</groupId>
             <artifactId>springfox-boot-starter</artifactId>
+            <version>${swagger.version}</version>
         </dependency>
 
         <!-- 防止进入swagger页面报类型转换错误，排除3.0.0中的引用，手动增加1.6.2版本 -->

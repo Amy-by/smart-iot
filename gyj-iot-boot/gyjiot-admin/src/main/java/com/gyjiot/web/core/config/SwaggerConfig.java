@@ -1,125 +1,75 @@
 package com.gyjiot.web.core.config;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import com.gyjiot.common.config.RuoYiConfig;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.models.auth.In;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
 import springfox.documentation.service.ApiInfo;
 import springfox.documentation.service.ApiKey;
-import springfox.documentation.service.AuthorizationScope;
 import springfox.documentation.service.Contact;
-import springfox.documentation.service.SecurityReference;
 import springfox.documentation.service.SecurityScheme;
 import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Swagger2的接口配置
- *
- * @author ruoyi
+ * Swagger2配置（适配Spring Boot2.5 + Springfox 2.9.2）
  */
 @Configuration
-public class SwaggerConfig
-{
-    /** 系统基础配置 */
-    @Autowired
-    private RuoYiConfig ruoyiConfig;
-
-    /** 是否开启swagger */
-    @Value("${swagger.enabled}")
-    private boolean enabled;
-
-    /** 设置请求的统一前缀 */
-    @Value("${swagger.pathMapping}")
-    private String pathMapping;
+@EnableSwagger2
+public class SwaggerConfig implements WebMvcConfigurer {
 
     /**
-     * 创建API
+     * 创建API应用
      */
     @Bean
-    public Docket createRestApi()
-    {
-        return new Docket(DocumentationType.OAS_30)
-                // 是否启用Swagger
-                .enable(enabled)
-                // 用来创建该API的基本信息，展示在文档的页面中（自定义展示的信息）
+    public Docket createRestApi() {
+        return new Docket(DocumentationType.SWAGGER_2) // 替换OAS_30为SWAGGER_2（2.9.2唯一支持的类型）
                 .apiInfo(apiInfo())
-                // 设置哪些接口暴露给Swagger展示
                 .select()
-                // 扫描所有有注解的api，用这种方式更灵活
-                .apis(RequestHandlerSelectors.withMethodAnnotation(ApiOperation.class))
-                // 扫描指定包中的swagger注解
-                // .apis(RequestHandlerSelectors.basePackage("com.gyjiot.project.tool.swagger"))
-                // 扫描所有 .apis(RequestHandlerSelectors.any())
+                // 扫描控制器包（根据你的项目实际包名调整，保持和原来一致）
+                .apis(RequestHandlerSelectors.basePackage("com.gyjiot.web"))
                 .paths(PathSelectors.any())
                 .build()
-                /* 设置安全模式，swagger可以设置访问token */
-                .securitySchemes(securitySchemes())
-                .securityContexts(securityContexts())
-                .pathMapping(pathMapping);
+                .securitySchemes(securitySchemes());
     }
 
     /**
-     * 安全模式，这里指定token通过Authorization头请求头传递
+     * 构建API文档信息
      */
-    private List<SecurityScheme> securitySchemes()
-    {
-        List<SecurityScheme> apiKeyList = new ArrayList<SecurityScheme>();
-        apiKeyList.add(new ApiKey("Authorization", "Authorization", In.HEADER.toValue()));
+    private ApiInfo apiInfo() {
+        return new ApiInfoBuilder()
+                .title("GYJIOT物联网系统API文档")
+                .description("GYJIOT物联网系统接口文档")
+                .contact(new Contact("GYJIOT", "", "xxx@xxx.com")) // 可自定义
+                .version("2.1.0")
+                .build();
+    }
+
+    /**
+     * 配置token认证（替换原来的operationSelector，适配2.9.2）
+     */
+    private List<SecurityScheme> securitySchemes() {
+        List<SecurityScheme> apiKeyList = new ArrayList<>();
+        // token参数名根据你的项目调整（比如token、Authorization）
+        apiKeyList.add(new ApiKey("token", "token", "header"));
         return apiKeyList;
     }
 
     /**
-     * 安全上下文
+     * 解决SwaggerUI访问404问题
      */
-    private List<SecurityContext> securityContexts()
-    {
-        List<SecurityContext> securityContexts = new ArrayList<>();
-        securityContexts.add(
-                SecurityContext.builder()
-                        .securityReferences(defaultAuth())
-                        .operationSelector(o -> o.requestMappingPattern().matches("/.*"))
-                        .build());
-        return securityContexts;
-    }
-
-    /**
-     * 默认的安全上引用
-     */
-    private List<SecurityReference> defaultAuth()
-    {
-        AuthorizationScope authorizationScope = new AuthorizationScope("global", "accessEverything");
-        AuthorizationScope[] authorizationScopes = new AuthorizationScope[1];
-        authorizationScopes[0] = authorizationScope;
-        List<SecurityReference> securityReferences = new ArrayList<>();
-        securityReferences.add(new SecurityReference("Authorization", authorizationScopes));
-        return securityReferences;
-    }
-
-    /**
-     * 添加摘要信息
-     */
-    private ApiInfo apiInfo()
-    {
-        // 用ApiInfoBuilder进行定制
-        return new ApiInfoBuilder()
-                // 设置标题
-                .title("管伊佳物联网平台接口文档")
-                // 描述
-                .description("描述：管伊佳物联网平台")
-                // 作者信息
-                .contact(new Contact(ruoyiConfig.getName(), null, null))
-                // 版本
-                .version("版本号:" + ruoyiConfig.getVersion())
-                .build();
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
     }
 }

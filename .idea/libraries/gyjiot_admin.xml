@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="gyjiot-admin">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/gyj-iot-boot/gyjiot-admin/target/gyjiot-admin.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
